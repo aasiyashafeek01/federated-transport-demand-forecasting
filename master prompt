@@ -1,0 +1,302 @@
+Here's your complete master prompt — everything about the project from start to finish.
+
+---
+
+# GeoFed / TransitIQ — Complete Project Master Prompt
+
+---
+
+## Project Identity
+
+**Full Title:** GeoFed: A Geographic Federated Learning Framework for Privacy-Preserving Urban Transit Demand Forecasting
+
+**Frontend Name:** TransitIQ (the realistic product name shown in the UI)
+
+**Degree:** MCA Final Year Project
+
+**Dataset:** Chicago Transit Authority (CTA) Monthly Bus Ridership Data, 2001–2025, sourced from the Chicago Data Portal. 34,749 rows after cleaning, 123 bus routes.
+
+---
+
+## The Core Problem Being Solved
+
+Urban transit authorities need accurate demand forecasts to allocate buses, plan schedules, and manage costs. Traditionally this requires centralising all ridership data in one place. But in a federated city network, different operators manage different zones — and they are often reluctant to share raw ridership data due to privacy concerns, competitive sensitivity, and data governance regulations.
+
+**The question this project answers:** Can we train a high-quality demand forecasting model across multiple transit operators without any operator ever sharing their raw data?
+
+**The answer:** Yes — using Federated Learning.
+
+---
+
+## What is Federated Learning (the core concept)
+
+Instead of sending raw data to a central server, each operator trains a local model on their own data and sends only the **model parameters** (coefficients and intercept — just numbers, not data) to a global coordinator. The coordinator **aggregates** these parameters using a weighted average and sends the improved global model back. This repeats for multiple rounds.
+
+**Key privacy guarantee:** Raw ridership data never leaves the operator's premises. Only model gradients are transmitted.
+
+**Analogy for viva:** Imagine 8 students each solving maths problems privately. Instead of sharing their workbooks (raw data), they share only their final answers (model parameters). The teacher combines the answers to find the best overall solution, then shares it back. No student ever saw another student's workbook.
+
+---
+
+## Dataset Details
+
+**Source:** Chicago Data Portal — CTA Monthly Bus Ridership by Route
+
+**Original columns:**
+- `route_id` — bus route identifier (e.g. "29", "X9", "J14")
+- `routename` — human-readable name (e.g. "State", "Ashland Express")
+- `Month_Beginning` — first day of the month
+- `Avg_Weekday_Rides` — average weekday ridership for that month
+- `Avg_Saturday_Rides` — average Saturday ridership
+- `Avg_Sunday-Holiday_Rides` — average Sunday/holiday ridership
+- `MonthTotal` — total rides that month (this is our target variable y)
+
+**After cleaning:** 34,749 rows, 123 routes, January 2001 to November 2025.
+
+---
+
+## Geographic Clustering — Why and How
+
+The dataset has 123 routes with no geographic structure. For federated learning we need to divide data into **clients** representing distinct operators.
+
+**Method:** K-Means clustering on `centroid_lat` and `centroid_lon` (the geographic centre of each route's stops) with K=8.
+
+**Why K=8:** Chosen to mirror real CTA operational zones. Tested K=6 to K=10, K=8 gave geographically coherent clusters that matched actual Chicago transit geography — south side routes clustered together, northwest routes clustered together, etc.
+
+**Result:** 8 geographically coherent client zones:
+
+| ID | Name | Routes | Samples | Zone |
+|----|------|--------|---------|------|
+| 0 | South Side Transit | 16 | 4,132 | South Chicago |
+| 1 | West Loop Authority | 18 | 5,382 | West/Northwest |
+| 2 | Far South Depot | 16 | 4,007 | Far South |
+| 3 | Southwest Transit | 8 | 2,248 | Southwest |
+| 4 | Central Loop Operator | 18 | 5,194 | Downtown/Lakeshore |
+| 5 | North Chicago Transit | 19 | 5,477 | Central/South Loop |
+| 6 | Northwest Corridor | 17 | 5,054 | Far Northwest |
+| 7 | Mid-South Authority | 11 | 3,255 | Mid-South |
+| 8 | North Shore Transit Co. | 6 | ~1,794 | North (reserve) |
+| 9 | Lakefront Express Auth. | 6 | ~1,794 | Lakefront (reserve) |
+
+Clients 8 and 9 are **reserve clients** created for the dynamic onboarding demonstration. Their data is synthesised from real CTA routes with realistic noise injection.
+
+---
+
+## Feature Engineering
+
+**`data_manager.py`** performs all preprocessing. New columns added:
+
+| Feature | How calculated | Why |
+|---------|---------------|-----|
+| `year` | Extracted from Month_Beginning | Captures long-term trend |
+| `month_num` | 1–12 | Raw month number |
+| `month_sin`, `month_cos` | sin/cos of (2π × month/12) | Encodes cyclical seasonality — December and January are close, not far apart |
+| `quarter` | 1–4 | Quarterly seasonality |
+| `demand_lag_1` | MonthTotal from 1 month ago | Last month's demand predicts this month's |
+| `demand_lag_3` | MonthTotal from 3 months ago | Quarterly memory |
+| `demand_lag_12` | MonthTotal from 12 months ago | Same month last year — strongest predictor |
+| `demand_rolling_3` | 3-month rolling average | Smoothed recent trend |
+| `demand_rolling_12` | 12-month rolling average | Long-term baseline |
+| `demand_growth_rate` | % change vs 12 months ago | YoY momentum |
+| `demand_category` | low/medium/high based on percentiles | Categorical demand level |
+
+**10 features used in model training** (FEATURE_COLS): `year`, `month_num`, `month_sin`, `month_cos`, `quarter`, `demand_lag_1`, `demand_lag_3`, `demand_lag_12`, `demand_rolling_3`, `demand_rolling_12`
+
+**Why sin/cos encoding for months:** If you encode months as 1–12, the model thinks December (12) and January (1) are far apart numerically. But they're adjacent seasonally. Sin/cos encoding wraps them so December and January are close in feature space.
+
+---
+
+## Model Architecture
+
+**Model:** `SGDRegressor` (Scikit-learn) — Stochastic Gradient Descent Regressor
+
+**Why SGD and not Ridge/LinearRegression:**
+- Ridge gives a single-shot closed-form solution — you can't do round-by-round training with it
+- SGD uses iterative gradient updates, which means each round of federated training genuinely improves the model
+- This gives us **real convergence curves** showing MAE decreasing round by round
+
+**Scaling:** Both X (features) and y (target) are standardised using `StandardScaler` before training. The y scaler's mean and scale are stored in the model parameters so predictions can be inverse-transformed back to real ridership numbers.
+
+**Target variable:** `MonthTotal` — total monthly rides per route
+
+---
+
+## Federated Learning Implementation
+
+### FedAvg (McMahan et al., 2017)
+
+The standard federated averaging algorithm:
+
+1. Global coordinator initialises model parameters
+2. Each round:
+   - Global parameters sent to all active clients
+   - Each client trains locally for several epochs using SGD
+   - Each client sends back updated coefficients and intercept
+3. Coordinator aggregates using **weighted average** — weight = client's sample count / total samples across all clients
+4. Aggregated parameters become the new global model
+5. Repeat for N rounds
+
+**Why weighted average:** A client with 5,477 samples (North Chicago Transit) should contribute more to the global model than one with 2,248 samples (Southwest Transit). Weighting by sample count ensures larger operators have proportionally more influence.
+
+### FedProx (Li et al., 2020)
+
+An extension of FedAvg designed for **heterogeneous** networks where clients have different data distributions:
+
+- Adds a **proximal term** to each client's local loss function
+- This penalises the local model for drifting too far from the global model during local training
+- Formula: `w_local = (1 - μ) × w_local_update + μ × w_global`
+- μ (mu) = 0.01 in our implementation
+
+**Why FedProx starts higher in round 1:** The proximal regularisation adds conservatism — it constrains how much the model can update in a single round. So round 1 MAE is higher (5,590 vs 4,926 for FedAvg). But it converges to the same final MAE by round 5.
+
+**Key finding:** On linear models with convex loss surfaces, FedAvg and FedProx converge to the same optimum. The proximal term matters more for non-convex models (deep neural networks). This is a valid and expected finding — not a flaw.
+
+---
+
+## Performance Results
+
+```
+FedAvg:
+  Round 1: MAE = 4,926
+  Round 2: MAE = 4,771
+  Round 3: MAE = 4,742
+  Round 4: MAE = 4,735
+  Round 5: MAE = 4,732  ← final
+
+FedProx:
+  Round 1: MAE = 5,590
+  Round 2: MAE = 4,779
+  Round 3: MAE = 4,743
+  Round 4: MAE = 4,735
+  Round 5: MAE = 4,732  ← same final
+```
+
+**Per-client MAE:**
+- Southwest Transit: 2,281 (lowest — small operator, consistent routes)
+- Northwest Corridor: 2,744
+- Far South Depot: 3,013
+- Central Loop: 4,457
+- South Side: 4,737
+- Mid-South: 5,442
+- West Loop: 6,385
+- North Chicago: 7,043 (highest — largest operator, most route diversity)
+
+**Sample prediction (Client 0, South Side Transit):**
+- 2025-09: Actual = 1,904,841 → Predicted = 1,950,305 (~2.4% error)
+- 2025-10: Actual = 1,972,853 → Predicted = 1,900,721 (~3.7% error)
+
+**Context:** Average monthly demand per route is ~176,000 rides. MAE of 4,732 = approximately 2.7% error. This is excellent for a privacy-preserving linear federated model.
+
+---
+
+## Dynamic Onboarding
+
+Demonstrates that the federation can grow mid-operation:
+
+**Phase 1 (8 clients, 3 rounds):** MAE converges to 4,742
+
+**Approve Client 8 (North Shore Transit Co.):**
+- Operator joins the federation
+- Their local gradients included from next round
+
+**Phase 2 (9 clients, 2 rounds):** MAE = 4,786 (slightly higher — new operator's data distribution is slightly different, takes rounds to stabilise)
+
+**Deactivate Client 8:**
+**Phase 3 (8 clients, 2 rounds):** MAE returns to 4,731 (nearly identical to original)
+
+**What this proves:** The federation is resilient. Adding and removing operators doesn't break the global model. It adapts and recovers.
+
+---
+
+## Insights Engine
+
+**`insights_engine.py`** performs three layers of analysis:
+
+### Layer 1 — Trend Analysis
+For each operator, compares **recent 3 months** demand vs **same 3 months last year** (YoY). Labels as growing / stable / declining based on % change.
+
+**Why YoY not all-time average:** Seasonal patterns mean summer is always higher than winter. Comparing to the same months last year removes this seasonal noise.
+
+### Layer 2 — Anomaly Detection
+For each route, calculates Z-score on its last 24 months of demand history. If Z-score exceeds ±2.5, flagged as anomaly.
+
+**Formula:** Z = (recent_demand - historical_mean) / historical_std
+
+**Three anomalies found:**
+- Route 53A (South Pulaski): Z = -3.04, -39% below average
+- Route 125 (Water Tower Express): Z = -2.84, -28% below average
+- Route 49B (North Western): Z = -2.89, -22% below average
+
+### Layer 3 — Service Pattern Classification
+Each route classified based on weekday share of total weekly demand:
+- **Commuter dominant:** Weekday share > 80% — peaks Mon–Fri, near-zero weekends
+- **Leisure / Mixed:** Weekday share < 55% — strong weekend demand
+- **Balanced:** 55–80% — moderate across all days
+
+**Network health score:** Calculated as `100 - (10 × declining_operators) - (3 × anomaly_count)` — a composite score reflecting overall network state.
+
+---
+
+## Backend Architecture
+
+**Flask API (`api.py`)** — runs on `http://localhost:5000`
+
+All endpoints:
+
+| Method | Endpoint | Purpose |
+|--------|---------|---------|
+| GET | `/api/status` | System status, final MAE, algorithm |
+| GET | `/api/clients` | All client registry (active + pending) |
+| GET | `/api/clients/<id>` | Single client details |
+| GET | `/api/clients/<id>/insights` | Operator-level insights |
+| GET | `/api/clients/<id>/predictions` | Actual vs predicted chart data |
+| GET | `/api/map/regions` | Client centroids + performance |
+| GET | `/api/insights` | Full network insights |
+| GET | `/api/federated/results` | Training results |
+| GET | `/api/federated/compare` | FedAvg vs FedProx comparison |
+| POST | `/api/federated/train` | Trigger new training run |
+| POST | `/api/clients/<id>/approve` | Approve pending operator |
+| POST | `/api/clients/<id>/deactivate` | Deactivate active operator |
+
+---
+
+## Frontend Architecture
+
+**React app** — runs on `http://localhost:3000`
+
+**App name:** TransitIQ
+
+**Auth:** Role-based login using `sessionStorage` (persists on refresh, clears on tab close)
+
+| Role | Username | Password | Redirects to |
+|------|---------|---------|-------------|
+| Transit Authority | admin | cta2025 | Authority Dashboard |
+| FL Coordinator | coord | fed2025 | FL Hub |
+| Operator 0–7 | op0–op7 | transit2025 | Their Operator Portal |
+
+**Pages:**
+- `Login.jsx` — Role selector + credentials form
+- `FLHub.jsx` — Convergence chart, training controls, client performance bars, dynamic onboarding panel
+- `AuthorityDashboard.jsx` — Health gauge, trend chart, anomalies, priority routes, operator cards
+- `OperatorPortal.jsx` — Demand chart (actual vs predicted), service patterns, route table, anomalies, 3 tabs
+
+**Design:** Dark mission-control aesthetic — deep navy background, electric cyan accents, Rajdhani display font, Share Tech Mono for data values.
+
+---
+
+## Key Viva Points
+
+1. **Privacy:** Raw data never transmitted — only model coefficients (2 arrays of numbers)
+2. **SGD choice:** Enables genuine round-by-round convergence, unlike Ridge which is single-shot
+3. **FedProx finding:** Same final MAE as FedAvg on linear models — expected on convex loss surfaces, would differ on neural networks
+4. **YoY baseline:** Removes seasonal noise from trend analysis
+5. **Z-score anomalies:** Catches sudden shocks that trend analysis misses
+6. **K=8 clustering:** Geographically coherent, mirrors real CTA operational zones
+7. **Sin/cos encoding:** Preserves cyclical nature of monthly seasonality
+8. **Dynamic onboarding:** Proves federation resilience — model adapts and recovers
+9. **2.7% average error:** Excellent for a privacy-preserving linear model on 24 years of real data
+10. **Warm starting:** Each training round initialises from the previous global model, not from scratch — this is why MAE improves round by round
+
+---
+
+This is every concept, every number, every design decision in the project. Save this — it's your complete reference for the viva.

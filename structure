@@ -1,0 +1,29 @@
+fed-3/
+│
+├── data/
+│   └── processed/
+│       └── final_merged_clients.csv          ← the canonical dataset (34,749 rows)
+│
+├── backend/
+│   ├── api.py                                ← Flask API server (runs on port 5000)
+│   ├── data_manager.py                       ← data loading, cleaning, feature engineering
+│   ├── client_manager.py                     ← client registry, approval, deactivation
+│   ├── federated_trainer.py                  ← FedAvg + FedProx implementation
+│   └── insights_engine.py                    ← trend, anomaly, service pattern analysis
+│
+└── frontend/
+    ├── package.json
+    └── src/
+        ├── index.js                          ← React entry point
+        ├── index.css                         ← complete design system
+        ├── App.jsx                           ← router + auth guard
+        ├── api/
+        │   ├── client.js                     ← all API fetch calls
+        │   └── auth.js                       ← login, session, logout
+        ├── components/
+        │   └── NavBar.jsx                    ← top navigation bar
+        └── pages/
+            ├── Login.jsx                     ← role selector + credentials
+            ├── FLHub.jsx                     ← FL coordinator dashboard
+            ├── AuthorityDashboard.jsx        ← network intelligence dashboard
+            └── OperatorPortal.jsx            ← per-operator analytics

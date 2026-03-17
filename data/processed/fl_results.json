@@ -1,0 +1,378 @@
+{
+  "status": "in_progress",
+  "algorithm": "fedprox",
+  "total_rounds": 5,
+  "n_features": 10,
+  "feature_cols": [
+    "Avg_Weekday_Rides",
+    "Avg_Saturday_Rides",
+    "Avg_Sunday-Holiday_Rides",
+    "demand_lag_1",
+    "demand_lag_3",
+    "demand_rolling_3",
+    "demand_rolling_12",
+    "month_sin",
+    "month_cos",
+    "year"
+  ],
+  "final_mae": 4732.45,
+  "final_rmse": 7670.3,
+  "rounds": [
+    {
+      "round": 1,
+      "algorithm": "fedprox",
+      "participating_clients": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7
+      ],
+      "n_participating": 8,
+      "client_metrics": {
+        "0": {
+          "mae": 4970.75,
+          "rmse": 8142.57,
+          "n_train": 3305,
+          "n_test": 827
+        },
+        "1": {
+          "mae": 6388.91,
+          "rmse": 8816.64,
+          "n_train": 4305,
+          "n_test": 1077
+        },
+        "2": {
+          "mae": 5413.22,
+          "rmse": 7643.69,
+          "n_train": 3205,
+          "n_test": 802
+        },
+        "3": {
+          "mae": 1597.89,
+          "rmse": 3126.2,
+          "n_train": 1798,
+          "n_test": 450
+        },
+        "4": {
+          "mae": 4708.37,
+          "rmse": 6940.49,
+          "n_train": 4155,
+          "n_test": 1039
+        },
+        "5": {
+          "mae": 8459.22,
+          "rmse": 11860.54,
+          "n_train": 4381,
+          "n_test": 1096
+        },
+        "6": {
+          "mae": 2900.09,
+          "rmse": 4194.04,
+          "n_train": 4043,
+          "n_test": 1011
+        },
+        "7": {
+          "mae": 5804.54,
+          "rmse": 9126.74,
+          "n_train": 2604,
+          "n_test": 651
+        }
+      },
+      "global_mae": 5590.2,
+      "global_rmse": 8472.61,
+      "timestamp": "2026-03-16T21:30:11.546784"
+    },
+    {
+      "round": 2,
+      "algorithm": "fedprox",
+      "participating_clients": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7
+      ],
+      "n_participating": 8,
+      "client_metrics": {
+        "0": {
+          "mae": 4522.29,
+          "rmse": 7599.6,
+          "n_train": 3305,
+          "n_test": 827
+        },
+        "1": {
+          "mae": 6305.97,
+          "rmse": 8814.88,
+          "n_train": 4305,
+          "n_test": 1077
+        },
+        "2": {
+          "mae": 4715.34,
+          "rmse": 6723.28,
+          "n_train": 3205,
+          "n_test": 802
+        },
+        "3": {
+          "mae": 1411.15,
+          "rmse": 2783.61,
+          "n_train": 1798,
+          "n_test": 450
+        },
+        "4": {
+          "mae": 4165.82,
+          "rmse": 6468.11,
+          "n_train": 4155,
+          "n_test": 1039
+        },
+        "5": {
+          "mae": 7747.69,
+          "rmse": 11065.11,
+          "n_train": 4381,
+          "n_test": 1096
+        },
+        "6": {
+          "mae": 2511.5,
+          "rmse": 3695.73,
+          "n_train": 4043,
+          "n_test": 1011
+        },
+        "7": {
+          "mae": 5065.28,
+          "rmse": 8449.39,
+          "n_train": 2604,
+          "n_test": 651
+        }
+      },
+      "global_mae": 4779.04,
+      "global_rmse": 7716.1,
+      "timestamp": "2026-03-16T21:30:11.747514"
+    },
+    {
+      "round": 3,
+      "algorithm": "fedprox",
+      "participating_clients": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7
+      ],
+      "n_participating": 8,
+      "client_metrics": {
+        "0": {
+          "mae": 4493.17,
+          "rmse": 7570.29,
+          "n_train": 3305,
+          "n_test": 827
+        },
+        "1": {
+          "mae": 6285.54,
+          "rmse": 8798.96,
+          "n_train": 4305,
+          "n_test": 1077
+        },
+        "2": {
+          "mae": 4689.91,
+          "rmse": 6685.88,
+          "n_train": 3205,
+          "n_test": 802
+        },
+        "3": {
+          "mae": 1395.72,
+          "rmse": 2755.41,
+          "n_train": 1798,
+          "n_test": 450
+        },
+        "4": {
+          "mae": 4139.78,
+          "rmse": 6428.83,
+          "n_train": 4155,
+          "n_test": 1039
+        },
+        "5": {
+          "mae": 7724.86,
+          "rmse": 11047.59,
+          "n_train": 4381,
+          "n_test": 1096
+        },
+        "6": {
+          "mae": 2486.21,
+          "rmse": 3656.76,
+          "n_train": 4043,
+          "n_test": 1011
+        },
+        "7": {
+          "mae": 5025.28,
+          "rmse": 8426.86,
+          "n_train": 2604,
+          "n_test": 651
+        }
+      },
+      "global_mae": 4743.37,
+      "global_rmse": 7681.28,
+      "timestamp": "2026-03-16T21:30:11.941016"
+    },
+    {
+      "round": 4,
+      "algorithm": "fedprox",
+      "participating_clients": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7
+      ],
+      "n_participating": 8,
+      "client_metrics": {
+        "0": {
+          "mae": 4487.05,
+          "rmse": 7568.74,
+          "n_train": 3305,
+          "n_test": 827
+        },
+        "1": {
+          "mae": 6277.55,
+          "rmse": 8792.37,
+          "n_train": 4305,
+          "n_test": 1077
+        },
+        "2": {
+          "mae": 4700.78,
+          "rmse": 6700.91,
+          "n_train": 3205,
+          "n_test": 802
+        },
+        "3": {
+          "mae": 1390.84,
+          "rmse": 2747.26,
+          "n_train": 1798,
+          "n_test": 450
+        },
+        "4": {
+          "mae": 4129.56,
+          "rmse": 6415.87,
+          "n_train": 4155,
+          "n_test": 1039
+        },
+        "5": {
+          "mae": 7717.75,
+          "rmse": 11045.87,
+          "n_train": 4381,
+          "n_test": 1096
+        },
+        "6": {
+          "mae": 2479.19,
+          "rmse": 3646.91,
+          "n_train": 4043,
+          "n_test": 1011
+        },
+        "7": {
+          "mae": 5015.65,
+          "rmse": 8423.92,
+          "n_train": 2604,
+          "n_test": 651
+        }
+      },
+      "global_mae": 4735.08,
+      "global_rmse": 7673.06,
+      "timestamp": "2026-03-16T21:30:12.140889"
+    },
+    {
+      "round": 5,
+      "algorithm": "fedprox",
+      "participating_clients": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7
+      ],
+      "n_participating": 8,
+      "client_metrics": {
+        "0": {
+          "mae": 4485.52,
+          "rmse": 7571.52,
+          "n_train": 3305,
+          "n_test": 827
+        },
+        "1": {
+          "mae": 6273.65,
+          "rmse": 8789.15,
+          "n_train": 4305,
+          "n_test": 1077
+        },
+        "2": {
+          "mae": 4716.34,
+          "rmse": 6722.67,
+          "n_train": 3205,
+          "n_test": 802
+        },
+        "3": {
+          "mae": 1388.66,
+          "rmse": 2744.0,
+          "n_train": 1798,
+          "n_test": 450
+        },
+        "4": {
+          "mae": 4123.59,
+          "rmse": 6409.47,
+          "n_train": 4155,
+          "n_test": 1039
+        },
+        "5": {
+          "mae": 7714.24,
+          "rmse": 11046.35,
+          "n_train": 4381,
+          "n_test": 1096
+        },
+        "6": {
+          "mae": 2476.56,
+          "rmse": 3643.75,
+          "n_train": 4043,
+          "n_test": 1011
+        },
+        "7": {
+          "mae": 5012.79,
+          "rmse": 8422.87,
+          "n_train": 2604,
+          "n_test": 651
+        }
+      },
+      "global_mae": 4732.45,
+      "global_rmse": 7670.3,
+      "timestamp": "2026-03-16T21:30:12.324970"
+    }
+  ],
+  "convergence": {
+    "mae_history": [
+      5590.2,
+      4779.04,
+      4743.37,
+      4735.08,
+      4732.45
+    ],
+    "rmse_history": [
+      8472.61,
+      7716.1,
+      7681.28,
+      7673.06,
+      7670.3
+    ]
+  }
+}
